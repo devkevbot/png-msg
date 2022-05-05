@@ -1,19 +1,20 @@
 #![allow(dead_code)]
 
+use crate::{Error, Result};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Eq)]
-struct ChunkType {
+pub struct ChunkType {
     data: [u8; 4],
 }
 
 impl ChunkType {
-    fn bytes(&self) -> [u8; 4] {
+    pub fn bytes(&self) -> [u8; 4] {
         self.data
     }
 
-    fn is_valid(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         for b in self.data.iter() {
             if !b.is_ascii_alphabetic() {
                 return false;
@@ -23,34 +24,53 @@ impl ChunkType {
         self.is_reserved_bit_valid()
     }
 
-    fn is_critical(&self) -> bool {
+    pub fn is_critical(&self) -> bool {
         let ancillary_byte = self.data[0];
         ancillary_byte.is_ascii_uppercase()
     }
 
-    fn is_public(&self) -> bool {
+    pub fn is_public(&self) -> bool {
         let private_byte = self.data[1];
         private_byte.is_ascii_uppercase()
     }
 
-    fn is_reserved_bit_valid(&self) -> bool {
+    pub fn is_reserved_bit_valid(&self) -> bool {
         let reserved_byte = self.data[2];
         reserved_byte.is_ascii_uppercase()
     }
 
-    fn is_safe_to_copy(&self) -> bool {
+    pub fn is_safe_to_copy(&self) -> bool {
         let safe_to_copy_byte = self.data[3];
         safe_to_copy_byte.is_ascii_lowercase()
     }
 }
 
-impl TryFrom<[u8; 4]> for ChunkType {
-    type Error = String;
+#[derive(Debug)]
+pub enum ChunkTypeError {
+    InvalidCharacter(u8),
+    InvalidLength(usize),
+}
 
-    fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
+impl Display for ChunkTypeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            ChunkTypeError::InvalidLength(length) => {
+                write!(f, "expected 0 <= length <= 4, got {}", length)
+            }
+            ChunkTypeError::InvalidCharacter(c) => write!(f, "unrecognized character {}", c),
+        }
+    }
+}
+
+impl std::error::Error for ChunkTypeError {}
+
+impl TryFrom<[u8; 4]> for ChunkType {
+    type Error = Error;
+
+    fn try_from(value: [u8; 4]) -> Result<Self> {
         for b in value.iter() {
             if !b.is_ascii_alphabetic() {
-                return Err(String::from("expected A-Za-z"));
+                return Err(Box::from(ChunkTypeError::InvalidCharacter(*b)));
             }
         }
         Ok(ChunkType { data: value })
@@ -58,25 +78,22 @@ impl TryFrom<[u8; 4]> for ChunkType {
 }
 
 impl FromStr for ChunkType {
-    type Err = String;
+    type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         if s.len() != 4 && s.len() != 0 {
-            return Err(String::from("must be length 0 or 4"));
+            return Err(Box::from(ChunkTypeError::InvalidLength(s.len())));
         }
 
         let bytes_slice = s.as_bytes();
         for b in bytes_slice.iter() {
             if !b.is_ascii_alphabetic() {
-                return Err(String::from("expected A-Za-z"));
+                return Err(Box::from(ChunkTypeError::InvalidCharacter(*b)));
             }
         }
 
-        let bytes_array = bytes_slice.try_into();
-        return match bytes_array {
-            Ok(data) => Ok(ChunkType { data }),
-            Err(e) => Err(e.to_string()),
-        };
+        let bytes_array = bytes_slice.try_into()?;
+        Ok(ChunkType { data: bytes_array })
     }
 }
 
