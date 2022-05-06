@@ -15,6 +15,13 @@ impl Chunk {
         Self { chunk_type, data }
     }
 
+    pub const CHUNK_LENGTH_FIELD_SIZE: usize = 4;
+    pub const CHUNK_TYPE_FIELD_SIZE: usize = 4;
+    pub const CHUNK_CRC_FIELD_SIZE: usize = 4;
+
+    pub const CHUNK_META_SIZE: usize =
+        Self::CHUNK_LENGTH_FIELD_SIZE + Self::CHUNK_TYPE_FIELD_SIZE + Self::CHUNK_CRC_FIELD_SIZE;
+
     pub fn length(&self) -> usize {
         self.data.len()
     }
@@ -60,11 +67,11 @@ impl TryFrom<&[u8]> for Chunk {
     type Error = Error;
 
     fn try_from(value: &[u8]) -> Result<Self> {
-        let (length, value) = value.split_at(4);
+        let (length, value) = value.split_at(Self::CHUNK_LENGTH_FIELD_SIZE);
         let length = u32::from_be_bytes(length.try_into()?) as usize;
 
-        let (chunk_type, value) = value.split_at(4);
-        let chunk_type: [u8; 4] = chunk_type.try_into()?;
+        let (chunk_type, value) = value.split_at(Self::CHUNK_TYPE_FIELD_SIZE);
+        let chunk_type: [u8; Self::CHUNK_LENGTH_FIELD_SIZE] = chunk_type.try_into()?;
         let chunk_type = ChunkType::try_from(chunk_type)?;
 
         if !chunk_type.is_valid() {
@@ -73,7 +80,7 @@ impl TryFrom<&[u8]> for Chunk {
 
         let (data, value) = value.split_at(length);
 
-        let (crc, value) = value.split_at(4);
+        let (crc, value) = value.split_at(Self::CHUNK_CRC_FIELD_SIZE);
 
         let supplied_chunk = Self {
             chunk_type,
