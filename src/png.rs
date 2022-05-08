@@ -1,7 +1,7 @@
 #![allow(unused_variables, dead_code)]
 
-use crate::chunk::Chunk;
-use crate::chunk_type::ChunkType;
+pub use crate::chunk::Chunk;
+pub use crate::chunk_type::ChunkType;
 use crate::{Error, Result};
 use std::fmt::{Display, Formatter};
 
@@ -12,15 +12,15 @@ pub struct Png {
 impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
-    fn from_chunks(chunks: Vec<Chunk>) -> Png {
+    pub fn from_chunks(chunks: Vec<Chunk>) -> Png {
         Self { chunks }
     }
 
-    fn append_chunk(&mut self, chunk: Chunk) {
+    pub fn append_chunk(&mut self, chunk: Chunk) {
         self.chunks.push(chunk)
     }
 
-    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
+    pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
         let pos_to_remove = self
             .chunks
             .iter()
@@ -34,21 +34,21 @@ impl Png {
         }
     }
 
-    fn header(&self) -> &[u8; 8] {
+    pub fn header(&self) -> &[u8; 8] {
         &Self::STANDARD_HEADER
     }
 
-    fn chunks(&self) -> &[Chunk] {
+    pub fn chunks(&self) -> &[Chunk] {
         self.chunks.as_slice()
     }
 
-    fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
+    pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         self.chunks
             .iter()
             .find(|&c| c.chunk_type().to_string() == chunk_type)
     }
 
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         let header = self.header().iter().copied().collect::<Vec<u8>>();
         let rest: Vec<u8> = self
             .chunks
