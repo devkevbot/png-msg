@@ -1,5 +1,5 @@
 [package]
-name = "project-bootsrap"
+name = "png-msg"
 version = "0.1.0"
 edition = "2021"
 authors = ["Kevin Jerome"]
@@ -7,4 +7,5 @@ authors = ["Kevin Jerome"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-crc = "1.8.1"
+crc = "=1.8.1"
+clap = { version = "=3.1.17", features = ["derive"] }
