@@ -4,13 +4,20 @@ use crate::{Error, Result};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
+const CHUNK_TYPE_MAX_SIZE: usize = 4;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct ChunkType {
-    data: [u8; 4],
+    data: [u8; CHUNK_TYPE_MAX_SIZE],
 }
 
 impl ChunkType {
-    pub fn bytes(&self) -> [u8; 4] {
+    const ANCILLARY_BYTE_INDEX: usize = 0;
+    const PRIVATE_BYTE_INDEX: usize = Self::ANCILLARY_BYTE_INDEX + 1;
+    const RESERVED_BYTE_INDEX: usize = Self::PRIVATE_BYTE_INDEX + 1;
+    const SAFE_TO_COPY_BYTE_INDEX: usize = Self::RESERVED_BYTE_INDEX + 1;
+
+    pub fn bytes(&self) -> [u8; CHUNK_TYPE_MAX_SIZE] {
         self.data
     }
 
@@ -25,49 +32,30 @@ impl ChunkType {
     }
 
     pub fn is_critical(&self) -> bool {
-        let ancillary_byte = self.data[0];
+        let ancillary_byte = self.data[Self::ANCILLARY_BYTE_INDEX];
         ancillary_byte.is_ascii_uppercase()
     }
 
     pub fn is_public(&self) -> bool {
-        let private_byte = self.data[1];
+        let private_byte = self.data[Self::PRIVATE_BYTE_INDEX];
         private_byte.is_ascii_uppercase()
     }
 
     pub fn is_reserved_bit_valid(&self) -> bool {
-        let reserved_byte = self.data[2];
+        let reserved_byte = self.data[Self::RESERVED_BYTE_INDEX];
         reserved_byte.is_ascii_uppercase()
     }
 
     pub fn is_safe_to_copy(&self) -> bool {
-        let safe_to_copy_byte = self.data[3];
+        let safe_to_copy_byte = self.data[Self::SAFE_TO_COPY_BYTE_INDEX];
         safe_to_copy_byte.is_ascii_lowercase()
     }
 }
 
-#[derive(Debug)]
-pub enum ChunkTypeError {
-    InvalidCharacter(u8),
-    InvalidLength(usize),
-}
-
-impl Display for ChunkTypeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            ChunkTypeError::InvalidLength(length) => {
-                write!(f, "expected 0 <= length <= 4, got {}", length)
-            }
-            ChunkTypeError::InvalidCharacter(c) => write!(f, "unrecognized character {}", c),
-        }
-    }
-}
-
-impl std::error::Error for ChunkTypeError {}
-
-impl TryFrom<[u8; 4]> for ChunkType {
+impl TryFrom<[u8; CHUNK_TYPE_MAX_SIZE]> for ChunkType {
     type Error = Error;
 
-    fn try_from(value: [u8; 4]) -> Result<Self> {
+    fn try_from(value: [u8; CHUNK_TYPE_MAX_SIZE]) -> Result<Self> {
         for b in value.iter() {
             if !b.is_ascii_alphabetic() {
                 return Err(Box::from(ChunkTypeError::InvalidCharacter(*b)));
@@ -81,7 +69,7 @@ impl FromStr for ChunkType {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        if s.len() != 4 && s.len() != 0 {
+        if s.len() != CHUNK_TYPE_MAX_SIZE && s.len() != 0 {
             return Err(Box::from(ChunkTypeError::InvalidLength(s.len())));
         }
 
@@ -100,8 +88,30 @@ impl FromStr for ChunkType {
 impl Display for ChunkType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let vector = Vec::from(self.data);
-        let string = String::from_utf8(vector).expect("failed to convert Vec<u8> into String");
-        write!(f, "{}", string)
+        write!(f, "{}", String::from_utf8(vector).unwrap())
+    }
+}
+
+#[derive(Debug)]
+pub enum ChunkTypeError {
+    InvalidCharacter(u8),
+    InvalidLength(usize),
+}
+
+impl std::error::Error for ChunkTypeError {}
+
+impl Display for ChunkTypeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            ChunkTypeError::InvalidLength(length) => {
+                write!(
+                    f,
+                    "expected 0 <= length <= {}, got {}",
+                    length, CHUNK_TYPE_MAX_SIZE
+                )
+            }
+            ChunkTypeError::InvalidCharacter(c) => write!(f, "unrecognized character {}", c),
+        }
     }
 }
 
