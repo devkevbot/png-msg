@@ -59,6 +59,15 @@ impl Png {
     }
 }
 
+impl Display for Png {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Png {{",)?;
+        writeln!(f, "  Data: {:?}", self.as_bytes())?;
+        writeln!(f, "}}",)?;
+        Ok(())
+    }
+}
+
 #[derive(Debug)]
 pub enum PngError {
     InvalidChunkType,
