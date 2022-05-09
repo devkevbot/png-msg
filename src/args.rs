@@ -37,6 +37,7 @@ fn execute(args: Args) -> Result<()> {
             chunk_type,
         } => {
             println!("{:?}, {}", input_path, chunk_type);
+            commands::remove(input_path, chunk_type)?;
             Ok(())
         }
         Command::Print { input_path } => {
