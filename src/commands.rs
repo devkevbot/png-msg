@@ -1,5 +1,5 @@
 use crate::png::{Chunk, ChunkType, Png};
-use crate::{Error, Result};
+use crate::Result;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -15,15 +15,9 @@ pub fn encode(
     let chunk = Chunk::new(chunk_type, data);
 
     let mut png = from_file(&input_path)?;
-
-    println!("{}", png);
-
     png.append_chunk(chunk);
 
-    println!("{}", png);
-
     let bytes = png.as_bytes();
-
     match output_path {
         Some(output_path) => Ok(to_file(&output_path, bytes)?),
         None => Ok(()),
@@ -32,9 +26,10 @@ pub fn encode(
 
 pub fn decode(input_path: PathBuf, chunk_type: String) -> Result<()> {
     let png = from_file(&input_path)?;
+
     if let Some(chonk) = png.chunk_by_type(&chunk_type) {
         let data = Chunk::data_as_string(chonk)?;
-        println!("Secret message was: {}", data);
+        println!("Decoded message: '{}'", data);
     }
 
     Ok(())
@@ -43,10 +38,10 @@ pub fn decode(input_path: PathBuf, chunk_type: String) -> Result<()> {
 pub fn remove(input_path: PathBuf, chunk_type: String) -> Result<()> {
     let mut png = from_file(&input_path)?;
     let removed_chunk = png.remove_chunk(&chunk_type)?;
-    println!("Removed chunk {}", removed_chunk.data_as_string()?);
+
+    println!("Removed message: '{}'", removed_chunk.data_as_string()?);
 
     let bytes = png.as_bytes();
-
     to_file(&input_path, bytes)?;
 
     Ok(())
@@ -55,6 +50,7 @@ pub fn remove(input_path: PathBuf, chunk_type: String) -> Result<()> {
 pub fn print(input_path: PathBuf) -> Result<()> {
     let png = from_file(&input_path)?;
     println!("{}", png);
+
     Ok(())
 }
 

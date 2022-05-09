@@ -1,12 +1,10 @@
 use crate::commands;
-use crate::{Error, Result};
+use crate::Result;
 use clap::Parser;
 use std::path::PathBuf;
 
 pub fn run() -> Result<()> {
-    let args = Args::parse();
-    let output = execute(args)?;
-    Ok(output)
+    execute(Args::parse())
 }
 
 fn execute(args: Args) -> Result<()> {
@@ -16,35 +14,19 @@ fn execute(args: Args) -> Result<()> {
             chunk_type,
             message,
             output_path,
-        } => {
-            println!(
-                "{:?}, {}, {}, {:?}",
-                input_path, chunk_type, message, output_path
-            );
-            let res = commands::encode(input_path, chunk_type, message, output_path)?;
-            Ok(res)
-        }
+        } => commands::encode(input_path, chunk_type, message, output_path),
+
         Command::Decode {
             input_path,
             chunk_type,
-        } => {
-            println!("{:?}, {}", input_path, chunk_type);
-            commands::decode(input_path, chunk_type)?;
-            Ok(())
-        }
+        } => commands::decode(input_path, chunk_type),
+
         Command::Remove {
             input_path,
             chunk_type,
-        } => {
-            println!("{:?}, {}", input_path, chunk_type);
-            commands::remove(input_path, chunk_type)?;
-            Ok(())
-        }
-        Command::Print { input_path } => {
-            println!("{:?}", input_path);
-            commands::print(input_path)?;
-            Ok(())
-        }
+        } => commands::remove(input_path, chunk_type),
+
+        Command::Print { input_path } => commands::print(input_path),
     }
 }
 
