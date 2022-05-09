@@ -42,6 +42,7 @@ fn execute(args: Args) -> Result<()> {
         }
         Command::Print { input_path } => {
             println!("{:?}", input_path);
+            commands::print(input_path)?;
             Ok(())
         }
     }

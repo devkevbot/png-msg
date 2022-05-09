@@ -52,6 +52,12 @@ pub fn remove(input_path: PathBuf, chunk_type: String) -> Result<()> {
     Ok(())
 }
 
+pub fn print(input_path: PathBuf) -> Result<()> {
+    let png = from_file(&input_path)?;
+    println!("{}", png);
+    Ok(())
+}
+
 fn from_file<P: AsRef<Path>>(path: &P) -> Result<Png> {
     let file_contents = fs::read(path)?;
     let png = Png::try_from(file_contents.as_slice())?;
